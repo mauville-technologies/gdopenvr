@@ -6,3 +6,11 @@ Working with GDNative modules is cumbersome at best and I don't like it. So I'm 
 
 This will make it easy to pin to godot versions, include in heavily customized engines and also make it infinitely easier to debug as it will be much more tightly integrated into the engine.
 
+___
+
+```
+cd godot/modules
+git clone --recursive https://github.com/mauville-technologies/gdopenvr
+```
+
+This should be all that's needed.
