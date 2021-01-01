@@ -1,6 +1,40 @@
 Import('env')
-#env.Append(CPPPATH=["mylib/include"]) # this is a relative path
 #env.Append(CPPPATH=["#myotherlib/include"]) # this is an 'absolute' path
 
-env.add_source_files(env.modules_sources, "*.cpp")
-env.add_source_files(env.modules_sources, "src/*.cpp")
+openvr_dir = "lib/openvr/"
+
+# First, create a custom env for the shared library.
+module_env = env.Clone()
+from compat import isbasestring
+
+# Add library includes
+module_env.Append(CPPPATH=[
+    "lib/openvr/headers",
+    ]) # this is a relative path
+
+module_env.add_source_files(env.modules_sources, "*.cpp")
+module_env.add_source_files(env.modules_sources, "src/*.cpp")
+module_env.add_source_files(env.modules_sources, "src/*/*.cpp")
+
+platform_string = ''
+extension_string = ''
+
+if (env['platform'] == 'windows'):
+    platform_string = 'win'
+    extension_string = '.lib'
+elif (env['platform'] == 'darwin'):
+    platform_string = 'osx32'
+    extension_string = '.dylib'
+elif (env['platform'] == "x11"):
+    platform_string = 'linux'
+    extension_string = '.so'
+
+if env['platform'] != 'darwin':
+    if env['bits'] == '64':
+        platform_string = platform_string + '64'
+    else:
+        platform_string = platform_string + '32'
+
+library_location = 'lib/openvr/lib/' + platform_string + '/openvr_api' + extension_string
+
+env.Append(LIBS=[File(library_location)])
