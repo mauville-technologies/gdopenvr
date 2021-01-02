@@ -8,19 +8,19 @@ This will make it easy to pin to godot versions, include in heavily customized e
 
 ___
 
+## Usage
+
+The goal of this module is to adhere as closely to this documentation as possible:
+https://github.com/GodotVR/godot-openvr-asset/wiki
+
+### Add to modules folder
+
 ```
 cd godot/modules
 git clone --recursive https://github.com/mauville-technologies/gdopenvr
 ```
 
 This should be all that's needed.
-
-___
-
-## Usage
-
-The goal of this module is to adhere as closely to this documentation as possible:
-https://github.com/GodotVR/godot-openvr-asset/wiki
 
 ### Differences
 
