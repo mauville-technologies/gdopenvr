@@ -1,6 +1,3 @@
-////////////////////////////////////////////////////////////////////////////////////////////////
-// GDNative module that exposes some OpenVR module options to Godot
-
 #ifndef OPENVR_CONTROLLER_H
 #define OPENVR_CONTROLLER_H
 
