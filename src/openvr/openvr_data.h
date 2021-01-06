@@ -4,7 +4,7 @@
 #ifndef GDOPENVR_DATA_H
 #define GDOPENVR_DATA_H
 
-#include <openvr.h>
+#include "modules/gdopenvr/lib/openvr/headers/openvr.h"
 #include <scene/resources/mesh.h>
 #include <vector>
 #include <core/templates/vector.h>

@@ -106,11 +106,11 @@ bool OpenVRInterface::is_stereo() {
 }
 
 Transform OpenVRInterface::get_transform_for_eye(XRInterface::Eyes p_eye, const Transform &p_cam_transform) {
+
 	Transform transform_for_eye;
 	Transform reference_frame = get_reference_frame();
 	Transform ret;
 	float world_scale = get_worldscale();
-
 	if (p_eye == 0) {
 		// we want a monoscopic transform.. shouldn't really apply here
 		transform_for_eye;
@@ -156,7 +156,7 @@ void OpenVRInterface::fill_projection_for_eye(float *p_projection, int p_eye, fl
 CameraMatrix OpenVRInterface::get_projection_for_eye(XRInterface::Eyes p_eye, real_t p_aspect, real_t p_z_near, real_t p_z_far) {
 	CameraMatrix cm;
 	ERR_FAIL_COND_V(arvr_data == NULL, CameraMatrix());
-
+	
 	fill_projection_for_eye((float *)cm.matrix, (int)p_eye, p_aspect, p_z_near, p_z_far);
 	return cm;
 }
@@ -178,7 +178,7 @@ void OpenVRInterface::commit_for_eye(XRInterface::Eyes p_eye, RID p_render_targe
 	// output to the external device if not.
 
 	Rect2 screen_rect = p_screen_rect;
-
+	
 	if (p_eye == 1 && !screen_rect.has_no_area()) {
 		// blit as mono, attempt to keep our aspect ratio and center our render buffer
 		Vector2 render_size = get_render_targetsize();
@@ -196,51 +196,22 @@ void OpenVRInterface::commit_for_eye(XRInterface::Eyes p_eye, RID p_render_targe
 
 		blit(0, &p_render_target, &screen_rect);
 	}
+	
+	XRInterface::Eyes eye = (XRInterface::Eyes)p_eye;
 
-	if (arvr_data->ovr->is_initialised()) {
-		vr::VRTextureBounds_t bounds;
-		bounds.uMin = 0.0;
-		bounds.uMax = 1.0;
-		bounds.vMin = 0.0;
-		bounds.vMax = 1.0;
-
-		uint32_t texid = get_texid(&p_render_target);
-
-		vr::Texture_t eyeTexture = { (void *)(uintptr_t)texid, vr::TextureType_OpenGL, vr::ColorSpace_Auto };
-
-		if (arvr_data->ovr->get_application_type() == openvr_data::OpenVRApplicationType::OVERLAY) {
-			// Overlay mode
-			if (p_eye == 1) {
-				vr::EVROverlayError vrerr;
-
-				// TODO: THIS LOOP CAUSES PROBLEMS.
-				for (int i = 0; i < arvr_data->ovr->get_overlay_count(); i++) {
-					vr::TextureID_t texidov = 0;
-						//DO things here
-						//= (vr::TextureID_t)RS::get_singleton()->texture_get_texid(RS::get_singleton()->viewport_get_texture(arvr_data->ovr->get_overlay(i).viewport_rid));
-
-					if (texid == texidov) {
-						vrerr = vr::VROverlay()->SetOverlayTexture(arvr_data->ovr->get_overlay(i).handle, &eyeTexture);
-
-						if (vrerr != vr::VROverlayError_None) {
-							print_line(String("OpenVR could not set texture for overlay: ") + String::num_int64(vrerr) + String(vr::VROverlay()->GetOverlayErrorNameFromEnum(vrerr)));
-						}
-
-						vrerr = vr::VROverlay()->SetOverlayTextureBounds(arvr_data->ovr->get_overlay(i).handle, &bounds);
-
-						if (vrerr != vr::VROverlayError_None) {
-							print_line(String("OpenVR could not set textute bounds for overlay: ") + String::num_int64(vrerr) + String(vr::VROverlay()->GetOverlayErrorNameFromEnum(vrerr)));
-						}
-					}
-				}
-			}
-		} else {
-			vr::EVRCompositorError vrerr = vr::VRCompositor()->Submit(p_eye == 1 ? vr::Eye_Left : vr::Eye_Right, &eyeTexture, &bounds);
-			if (vrerr != vr::VRCompositorError_None) {
-				printf("OpenVR reports: %i\n", vrerr);
-			}
-		}
-	}
+	if (eye == XRInterface::EYE_LEFT) {
+		screen_rect.size.x /= 2.0;
+	} else if (p_eye == XRInterface::EYE_RIGHT) {
+		screen_rect.size.x /= 2.0;
+		screen_rect.position.x += screen_rect.size.x;
+	}	
+	RendererCompositor::BlitToScreen blit;
+	blit.render_target = p_render_target;
+	blit.rect = Rect2i(screen_rect);
+	blit.eye = p_eye;
+	blit.vr = true;
+	RSG::rasterizer->prepare_for_blitting_render_targets();
+	RSG::rasterizer->blit_render_targets_to_screen(0, &blit, 1);
 }
 
 void OpenVRInterface::process() {

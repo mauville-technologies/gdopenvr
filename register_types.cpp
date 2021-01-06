@@ -31,5 +31,5 @@ void unregister_gdopenvr_types() {
 	if (new_interface == nullptr) {
 		return;
 	}
-	new_interface = nullptr;
+	new_interface.unref();
 }

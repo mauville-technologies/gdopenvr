@@ -41,7 +41,7 @@ openvr_data::~openvr_data() {
 void openvr_data::cleanup() {
 
 	if (image.is_valid()) {
-		image = nullptr;
+		image.unref();
 	}
 
 	if (hmd != NULL) {
@@ -217,7 +217,7 @@ bool openvr_data::initialise() {
 			print_line(String("Failed to find action file"));
 		}
 
-		directory = nullptr;
+		directory.unref();
 	}
 
 	if (success) {
@@ -1215,7 +1215,7 @@ bool openvr_data::_load_texture(texture_material *p_texture) {
 
 	// reset our references to ensure our material gets freed at the right time
 	p_texture->material = Ref<StandardMaterial3D>();
-	texture = nullptr;
+	texture.unref();
 	return true;
 }
 

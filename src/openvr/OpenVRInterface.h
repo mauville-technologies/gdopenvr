@@ -1,7 +1,7 @@
 #ifndef GDOVR_ARVR_INTERFACE_H
 #define GDOVR_ARVR_INTERFACE_H
 
-#include <openvr.h>
+#include "modules/gdopenvr/lib/openvr/headers/openvr.h"
 #include <servers/xr_server.h>
 #include <servers/xr/xr_interface.h>
 #include <servers/xr/xr_positional_tracker.h>
@@ -31,8 +31,6 @@ class OpenVRInterface : public XRInterface {
 		openvr_data *ovr;
 		uint32_t width;
 		uint32_t height;
-
-		int texture_id;
 	} arvr_data_struct;
 
 	arvr_data_struct *arvr_data = NULL;
@@ -259,8 +257,8 @@ public:
 	void blit(int p_eye, RID *p_render_target, Rect2 *p_rect) {
 		// blits out our texture as is, handy for preview display of one of the eyes that is already rendered with lens distortion on an external HMD
 		XRInterface::Eyes eye = (XRInterface::Eyes)p_eye;
-		RID *render_target = (RID *)p_render_target;
-		Rect2 screen_rect = *(Rect2 *)p_rect;
+		RID *render_target = p_render_target;
+		Rect2 screen_rect = *p_rect;
 
 		if (eye == XRInterface::EYE_LEFT) {
 			screen_rect.size.x /= 2.0;
@@ -269,26 +267,11 @@ public:
 			screen_rect.position.x += screen_rect.size.x;
 		}
 
-		/* THIS BIT NEEDS REDONE
-		RSG::rasterizer->set_current_render_target(RID());
-		RSG::rasterizer->blit_render_target_to_screen(*render_target, screen_rect, 0);
-		*/
-
-	}
-
-	uint32_t get_texid(RID *p_render_target) {
-		// In order to send off our textures to display on our hardware we need the opengl texture ID instead of the render target RID
-		// This is a handy function to expose that.
-
-		// need to redo this
-
-	/*	RID *render_target = (RID *)p_render_target;
-
-		RID eye_texture = RSG::storage->render_target_get_texture(*render_target);
-		uint32_t texid = RS::get_singleton()->texture_get_texid(eye_texture);
-
-		return texid;*/
-		return 0;
+		RSG::rasterizer->prepare_for_blitting_render_targets();
+		RendererCompositor::BlitToScreen blit;
+		blit.render_target = *p_render_target;
+		blit.rect = Rect2i(*p_rect);
+		RSG::rasterizer->blit_render_targets_to_screen(0, &blit, 1);
 	}
 };
 
