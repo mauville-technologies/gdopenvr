@@ -2,12 +2,12 @@
 #define OPENVR_SKELETON_H
 
 #include "openvr_data.h"
-#include <scene/3d/skeleton.h>
+#include <scene/3d/skeleton_3d.h>
 
 #include <stdlib.h>
 
-class OpenVRSkeleton : public Skeleton {
-	GDCLASS(OpenVRSkeleton, Skeleton)
+class OpenVRSkeleton : public Skeleton3D {
+	GDCLASS(OpenVRSkeleton, Skeleton3D)
 
 private:
 	openvr_data *ovr;

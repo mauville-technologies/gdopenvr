@@ -7,6 +7,7 @@
 #include <openvr.h>
 #include <scene/resources/mesh.h>
 #include <vector>
+#include <core/templates/vector.h>
 
 class openvr_data {
 public:
@@ -136,12 +137,12 @@ private:
 	struct texture_material {
 		TextureType type;
 		vr::TextureID_t texture_id;
-		Ref<SpatialMaterial> material;
+		Ref<StandardMaterial3D> material;
 	};
 
 	std::vector<texture_material> load_textures;
 
-	void load_texture(TextureType p_type, vr::TextureID_t p_texture_id, Ref<SpatialMaterial> p_material);
+	void load_texture(TextureType p_type, vr::TextureID_t p_texture_id, Ref<StandardMaterial3D> p_material);
 	bool _load_texture(texture_material *p_texture);
 
 public:

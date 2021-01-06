@@ -2,10 +2,10 @@
 #define OPENVR_ACTION_H
 
 #include "openvr_data.h"
-#include <scene/3d/spatial.h>
+#include <scene/3d/node_3d.h>
 
-class OpenVRAction : public Spatial {
-	GDCLASS(OpenVRAction, Spatial)
+class OpenVRAction : public Node3D {
+	GDCLASS(OpenVRAction, Node3D)
 
 private:
 	openvr_data *ovr;
