@@ -252,26 +252,6 @@ public:
 
 		return reference_frame;
 	}
-
-	void blit(int p_eye, RID *p_render_target, Rect2 *p_rect) {
-		// blits out our texture as is, handy for preview display of one of the eyes that is already rendered with lens distortion on an external HMD
-		XRInterface::Eyes eye = (XRInterface::Eyes)p_eye;
-		RID *render_target = p_render_target;
-		Rect2 screen_rect = *p_rect;
-
-		if (eye == XRInterface::EYE_LEFT) {
-			screen_rect.size.x /= 2.0;
-		} else if (p_eye == XRInterface::EYE_RIGHT) {
-			screen_rect.size.x /= 2.0;
-			screen_rect.position.x += screen_rect.size.x;
-		}
-
-		RSG::rasterizer->prepare_for_blitting_render_targets();
-		RendererCompositor::BlitToScreen blit;
-		blit.render_target = *p_render_target;
-		blit.rect = Rect2i(*p_rect);
-		RSG::rasterizer->blit_render_targets_to_screen(0, &blit, 1);
-	}
 };
 
 #endif

@@ -524,7 +524,7 @@ void openvr_data::get_eye_to_head_transform(Transform *p_transform, int p_eye, f
 		return;
 	}
 
-	vr::HmdMatrix34_t matrix = hmd->GetEyeToHeadTransform(p_eye == 1 ? vr::Eye_Left : vr::Eye_Right);
+	vr::HmdMatrix34_t matrix = hmd->GetEyeToHeadTransform(p_eye == XRInterface::EYE_LEFT ? vr::Eye_Left : vr::Eye_Right);
 
 	transform_from_matrix(p_transform, &matrix, p_world_scale);
 }

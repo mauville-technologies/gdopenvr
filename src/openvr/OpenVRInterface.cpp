@@ -140,7 +140,7 @@ Transform OpenVRInterface::get_transform_for_eye(XRInterface::Eyes p_eye, const 
 void OpenVRInterface::fill_projection_for_eye(float *p_projection, int p_eye, float p_aspect, float p_z_near, float p_z_far) {
 	if (arvr_data->ovr->is_initialised()) {
 		vr::HmdMatrix44_t matrix = arvr_data->ovr->hmd->GetProjectionMatrix(
-				p_eye == 1 ? vr::Eye_Left : vr::Eye_Right, p_z_near, p_z_far);
+				p_eye == XRInterface::EYE_LEFT ? vr::Eye_Left : vr::Eye_Right, p_z_near, p_z_far);
 
 		int k = 0;
 		for (int i = 0; i < 4; i++) {
