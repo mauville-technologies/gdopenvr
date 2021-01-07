@@ -1,6 +1,6 @@
 
 #include "register_types.h"
-#include "core/class_db.h"
+#include "core/object/class_db.h"
 #include "src/openvr/OpenVRInterface.h"
 #include "src/openvr/OpenVRAction.h"
 #include "src/openvr/OpenVRController.h"
@@ -31,5 +31,5 @@ void unregister_gdopenvr_types() {
 	if (new_interface == nullptr) {
 		return;
 	}
-	new_interface = nullptr;
+	new_interface.unref();
 }

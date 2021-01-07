@@ -2,8 +2,8 @@
 // Helper calls and singleton container for accessing openvr
 
 #include "openvr_data.h"
-#include <core/bind/core_bind.h>
-#include <core/project_settings.h>
+#include <core/core_bind.h>
+#include <core/config/project_settings.h>
 #include "OpenVRInterface.h"
 
 openvr_data *openvr_data::singleton = NULL;
@@ -41,7 +41,7 @@ openvr_data::~openvr_data() {
 void openvr_data::cleanup() {
 
 	if (image.is_valid()) {
-		image = nullptr;
+		image.unref();
 	}
 
 	if (hmd != NULL) {
@@ -217,7 +217,7 @@ bool openvr_data::initialise() {
 			print_line(String("Failed to find action file"));
 		}
 
-		directory = nullptr;
+		directory.unref();
 	}
 
 	if (success) {
@@ -289,7 +289,7 @@ void openvr_data::process() {
 	uint64_t msec = _OS::get_singleton()->get_ticks_msec();
 
 	// we scale all our positions by our world scale
-	Ref<OpenVRInterface> server = ARVRServer::get_singleton()->find_interface("OpenVR");
+	Ref<OpenVRInterface> server = XRServer::get_singleton()->find_interface("OpenVR");
 
 	if (!server.is_valid()) {
 		return;
@@ -390,7 +390,7 @@ void openvr_data::process() {
 				Transform transform;
 				transform_from_matrix(&transform, &tracked_device_pose[i].mDeviceToAbsoluteTracking, 1.0);
 
-				Ref<OpenVRInterface> server = ARVRServer::get_singleton()->find_interface("OpenVR");
+				Ref<OpenVRInterface> server = XRServer::get_singleton()->find_interface("OpenVR");
 
 				if (!server.is_valid()) {
 					continue;
@@ -524,7 +524,7 @@ void openvr_data::get_eye_to_head_transform(Transform *p_transform, int p_eye, f
 		return;
 	}
 
-	vr::HmdMatrix34_t matrix = hmd->GetEyeToHeadTransform(p_eye == 1 ? vr::Eye_Left : vr::Eye_Right);
+	vr::HmdMatrix34_t matrix = hmd->GetEyeToHeadTransform(p_eye == XRInterface::EYE_LEFT ? vr::Eye_Left : vr::Eye_Right);
 
 	transform_from_matrix(p_transform, &matrix, p_world_scale);
 }
@@ -886,7 +886,7 @@ void openvr_data::attach_device(uint32_t p_device_index) {
 
 			sprintf(&device_name[strlen(device_name)], "_%i", p_device_index);
 
-			Ref<OpenVRInterface> server = ARVRServer::get_singleton()->find_interface("OpenVR");
+			Ref<OpenVRInterface> server = XRServer::get_singleton()->find_interface("OpenVR");
 
 			if (server.is_valid()) {
 				device->tracker_id = server->add_controller(device_name, hand, true, true);
@@ -913,7 +913,7 @@ void openvr_data::detach_device(uint32_t p_device_index) {
 	if (p_device_index == vr::k_unTrackedDeviceIndexInvalid) {
 		// really?!
 	} else if (tracked_devices[p_device_index].tracker_id != 0) {
-		Ref<OpenVRInterface> server = ARVRServer::get_singleton()->find_interface("OpenVR");
+		Ref<OpenVRInterface> server = XRServer::get_singleton()->find_interface("OpenVR");
 
 		if (server.is_valid()) {
 			server->remove_controller(tracked_devices[p_device_index].tracker_id);
@@ -932,7 +932,7 @@ void openvr_data::detach_device(uint32_t p_device_index) {
 ////////////////////////////////////////////////////////////////
 // Called by our process loop to handle our fixed actions
 void openvr_data::process_device_actions(tracked_device *p_device, uint64_t p_msec) {
-	Ref<OpenVRInterface> server = ARVRServer::get_singleton()->find_interface("OpenVR");
+	Ref<OpenVRInterface> server = XRServer::get_singleton()->find_interface("OpenVR");
 	const char input_types[DAH_IN_MAX] = { 'b', 'f', 'b', 'f', 'v', 'b', 'b', 'b' }; // input type (b)oolean, (f)loat, (v)ector2
 	const int godot_index[DAH_IN_MAX] = { 15, 2, 2, 4, 0, 14, 7, 1 }; // button / axis indexes
 
@@ -1085,10 +1085,10 @@ bool openvr_data::_load_render_model(model_mesh *p_model) {
 		return true;
 	}
 
-	PoolVector3Array vertices;
-	PoolVector3Array normals;
-	PoolVector2Array texcoords;
-	PoolIntArray indices;
+	PackedVector3Array vertices;
+	PackedVector3Array normals;
+	PackedVector2Array texcoords;
+	Vector<int> indices;
 	Array arr;
 	Array blend_array;
 
@@ -1101,9 +1101,9 @@ bool openvr_data::_load_render_model(model_mesh *p_model) {
 	// copy our vertices
 	{
 		// lock for writing
-		PoolVector3Array::Write vw = vertices.write();
-		PoolVector3Array::Write nw = normals.write();
-		PoolVector2Array::Write tw = texcoords.write();
+		Vector3 *vw = vertices.ptrw();
+		Vector3 * nw = normals.ptrw();
+		Vector2 * tw = texcoords.ptrw();
 
 		for (uint32_t i = 0; i < ovr_render_model->unVertexCount; i++) {
 			vw[i] = Vector3(ovr_render_model->rVertexData[i].vPosition.v[0], ovr_render_model->rVertexData[i].vPosition.v[1], ovr_render_model->rVertexData[i].vPosition.v[2]);
@@ -1115,7 +1115,7 @@ bool openvr_data::_load_render_model(model_mesh *p_model) {
 	// copy our indices, for some reason these are other way around :)
 	{
 		// lock for writing
-		PoolIntArray::Write iw = indices.write();
+		int* iw = indices.ptrw();
 
 		for (uint32_t i = 0; i < ovr_render_model->unTriangleCount * 3; i += 3) {
 			iw[i + 0] = ovr_render_model->rIndexData[i + 2];
@@ -1134,10 +1134,10 @@ bool openvr_data::_load_render_model(model_mesh *p_model) {
 	arr[ArrayMesh::ARRAY_INDEX] = indices;
 
 	// and load
-	p_model->mesh->add_surface_from_arrays(ArrayMesh::PRIMITIVE_TRIANGLES, arr, blend_array, ArrayMesh::ARRAY_COMPRESS_DEFAULT);
+	p_model->mesh->add_surface_from_arrays(Mesh::PrimitiveType::PRIMITIVE_TRIANGLES, arr, blend_array);
 
 	// prepare our material
-	Ref<SpatialMaterial> material;
+	Ref<StandardMaterial3D> material;
 	material.instance();
 
 	// queue loading our textures
@@ -1155,7 +1155,7 @@ bool openvr_data::_load_render_model(model_mesh *p_model) {
 
 ////////////////////////////////////////////////////////////////
 // Load a texture and load it into a spatial material
-void openvr_data::load_texture(TextureType p_type, vr::TextureID_t p_texture_id, Ref<SpatialMaterial> p_material) {
+void openvr_data::load_texture(TextureType p_type, vr::TextureID_t p_texture_id, Ref<StandardMaterial3D> p_material) {
 	// add an entry, we'll attempt a load
 	texture_material new_entry;
 
@@ -1185,18 +1185,18 @@ bool openvr_data::_load_texture(texture_material *p_texture) {
 		print_line(String("OpenVR: Couldn''t find texture for ") + String::num_int64(p_texture->texture_id) + " (" + String::num_int64(err) + ")");
 
 		// reset our references to ensure our material gets freed at the right time
-		p_texture->material = Ref<SpatialMaterial>();
+		p_texture->material = Ref<StandardMaterial3D>();
 
 		// don't try again, remove it from our list
 		return true;
 	}
 
-	PoolByteArray image_data;
+	Vector<uint8_t> image_data;
 	image_data.resize(ovr_texture->unWidth * ovr_texture->unHeight * 4);
 
 	{
-		PoolByteArray::Write idw = image_data.write();
-		memcpy(idw.ptr(), ovr_texture->rubTextureMapData, ovr_texture->unWidth * ovr_texture->unHeight * 4);
+		uint8_t* idw = image_data.ptrw();
+		memcpy(idw, ovr_texture->rubTextureMapData, ovr_texture->unWidth * ovr_texture->unHeight * 4);
 	}
 
 	image = static_cast<Ref<Image>>(memnew(Image));
@@ -1204,18 +1204,18 @@ bool openvr_data::_load_texture(texture_material *p_texture) {
 	image->create(ovr_texture->unWidth, ovr_texture->unHeight, false, Image::FORMAT_RGBA8, image_data);
 
 	Ref<ImageTexture> texture = memnew(ImageTexture);
-	texture->create_from_image(image, 7);
+	texture->create_from_image(image);
 
 	switch (p_texture->type) {
 		case TT_ALBEDO:
-			p_texture->material->set_texture(SpatialMaterial::TEXTURE_ALBEDO, texture);
+			p_texture->material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, texture);
 			break;
 		default: break;
 	}
 
 	// reset our references to ensure our material gets freed at the right time
-	p_texture->material = Ref<SpatialMaterial>();
-	texture = nullptr;
+	p_texture->material = Ref<StandardMaterial3D>();
+	texture.unref();
 	return true;
 }
 

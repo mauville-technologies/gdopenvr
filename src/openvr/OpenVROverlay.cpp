@@ -1,7 +1,16 @@
 #include "OpenVROverlay.h"
 #include "OpenVRInterface.h"
-#include <servers/arvr_server.h>
-#include <core/engine.h>
+#include <servers/xr_server.h>
+#include <core/config/engine.h>
+#include <core/version.h>
+
+#if(VERSION_MAJOR) >= 4
+	#define TEXTURE_CLASS Texture2D
+	#define REAL_VARIANT Variant::FLOAT
+#else
+	#define TEXTURE_CLASS Texture
+	#define REAL_VARIANT Variant::REAL
+#endif
 
 void OpenVROverlay::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_exit_tree"), &OpenVROverlay::_exit_tree);
@@ -12,7 +21,7 @@ void OpenVROverlay::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_overlay_width_in_meters"), &OpenVROverlay::get_overlay_width_in_meters);
 	ClassDB::bind_method(D_METHOD("set_overlay_width_in_meters"), &OpenVROverlay::set_overlay_width_in_meters);
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "overlay_width_in_meters", PROPERTY_HINT_NONE), "set_overlay_width_in_meters", "get_overlay_width_in_meters");
+	ADD_PROPERTY(PropertyInfo(REAL_VARIANT, "overlay_width_in_meters", PROPERTY_HINT_NONE), "set_overlay_width_in_meters", "get_overlay_width_in_meters");
 
 	ClassDB::bind_method(D_METHOD("track_relative_to_device"), &OpenVROverlay::track_relative_to_device);
 	ClassDB::bind_method(D_METHOD("overlay_position_absolute"), &OpenVROverlay::overlay_position_absolute);
@@ -23,7 +32,7 @@ OpenVROverlay::OpenVROverlay() {
 	overlay_width_in_meters = 1.0;
 	overlay_visible = true;
 
-	set_update_mode(Viewport::UpdateMode::UPDATE_ALWAYS);
+	set_update_mode(SubViewport::UpdateMode::UPDATE_ALWAYS);
 }
 
 OpenVROverlay::~OpenVROverlay() {
@@ -57,7 +66,7 @@ void OpenVROverlay::_ready() {
 	overlay_position_absolute(initial_transform);
 	set_overlay_width_in_meters(overlay_width_in_meters);
 	set_overlay_visible(overlay_visible);
-	set_use_arvr(true);
+	set_use_xr(true);
 }
 
 void OpenVROverlay::_exit_tree() {
@@ -133,7 +142,7 @@ void OpenVROverlay::set_overlay_visible(bool p_visible) {
 bool OpenVROverlay::track_relative_to_device(vr::TrackedDeviceIndex_t p_tracked_device_index, Transform p_transform) {
 	if (overlay && !Engine::get_singleton()->is_editor_hint()) {
 		vr::HmdMatrix34_t matrix;
-		Ref<OpenVRInterface> ovr_interface = static_cast<Ref<OpenVRInterface> >(ARVRServer::get_singleton()->find_interface("OpenVR"));
+		Ref<OpenVRInterface> ovr_interface = static_cast<Ref<OpenVRInterface> >(XRServer::get_singleton()->find_interface("OpenVR"));
 		ovr->matrix_from_transform(&matrix, (Transform *)&p_transform, ovr_interface->get_worldscale());
 
 		vr::EVROverlayError vrerr = vr::VROverlay()->SetOverlayTransformTrackedDeviceRelative(overlay, p_tracked_device_index, &matrix);
@@ -153,7 +162,7 @@ bool OpenVROverlay::overlay_position_absolute(Transform p_transform) {
 	if (overlay && !Engine::get_singleton()->is_editor_hint()) {
 		vr::HmdMatrix34_t matrix;
 		vr::TrackingUniverseOrigin origin;
-		Ref<OpenVRInterface> ovr_interface = static_cast<Ref<OpenVRInterface> >(ARVRServer::get_singleton()->find_interface("OpenVR"));
+		Ref<OpenVRInterface> ovr_interface = static_cast<Ref<OpenVRInterface>>(XRServer::get_singleton()->find_interface("OpenVR"));
 		ovr->matrix_from_transform(&matrix, (Transform *)&p_transform, ovr_interface->get_worldscale());
 
 		openvr_data::OpenVRTrackingUniverse tracking_universe = ovr->get_tracking_universe();

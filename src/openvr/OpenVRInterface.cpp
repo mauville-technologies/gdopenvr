@@ -1,5 +1,5 @@
 #include "OpenVRInterface.h"
-#include <core/bind/core_bind.h>
+#include <core/core_bind.h>
 
 void OpenVRInterface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_application_type"), &OpenVRInterface::get_application_type);
@@ -26,7 +26,6 @@ void OpenVRInterface::_bind_methods() {
 OpenVRInterface::OpenVRInterface() {
 	arvr_data = static_cast< arvr_data_struct *>(memalloc(sizeof(arvr_data_struct)));
 	arvr_data->ovr = openvr_data::retain_singleton();
-	arvr_data->video_driver = 0;
 }
 
 OpenVRInterface::~OpenVRInterface() {
@@ -48,7 +47,7 @@ StringName OpenVRInterface::get_name() const {
 }
 
 int OpenVRInterface::get_capabilities() const {
-	return ARVR_STEREO + ARVR_EXTERNAL;
+	return XR_STEREO + XR_EXTERNAL;
 }
 
 bool OpenVRInterface::is_initialized() const {
@@ -64,14 +63,11 @@ bool OpenVRInterface::is_initialized() const {
 }
 
 bool OpenVRInterface::initialize() {
-	// this should be static once Godot runs but obtain whether we're running GLES2, GLES3 or Vulkan
-	arvr_data->video_driver = _OS::get_singleton()->get_current_video_driver();
-
 	if (arvr_data->ovr->initialise()) {
 		// go and get our recommended target size
 		arvr_data->ovr->get_recommended_rendertarget_size(&arvr_data->width, &arvr_data->height);
 
-		ARVRServer *arvr_server = ARVRServer::get_singleton();
+		XRServer *arvr_server = XRServer::get_singleton();
 		if ((arvr_server != NULL) && (arvr_server->get_primary_interface() == NULL)) {
 			arvr_server->set_primary_interface(this);
 		};
@@ -109,12 +105,12 @@ bool OpenVRInterface::is_stereo() {
 	return true;
 }
 
-Transform OpenVRInterface::get_transform_for_eye(ARVRInterface::Eyes p_eye, const Transform &p_cam_transform) {
+Transform OpenVRInterface::get_transform_for_eye(XRInterface::Eyes p_eye, const Transform &p_cam_transform) {
+
 	Transform transform_for_eye;
 	Transform reference_frame = get_reference_frame();
 	Transform ret;
 	float world_scale = get_worldscale();
-
 	if (p_eye == 0) {
 		// we want a monoscopic transform.. shouldn't really apply here
 		transform_for_eye;
@@ -144,7 +140,7 @@ Transform OpenVRInterface::get_transform_for_eye(ARVRInterface::Eyes p_eye, cons
 void OpenVRInterface::fill_projection_for_eye(float *p_projection, int p_eye, float p_aspect, float p_z_near, float p_z_far) {
 	if (arvr_data->ovr->is_initialised()) {
 		vr::HmdMatrix44_t matrix = arvr_data->ovr->hmd->GetProjectionMatrix(
-				p_eye == 1 ? vr::Eye_Left : vr::Eye_Right, p_z_near, p_z_far);
+				p_eye == XRInterface::EYE_LEFT ? vr::Eye_Left : vr::Eye_Right, p_z_near, p_z_far);
 
 		int k = 0;
 		for (int i = 0; i < 4; i++) {
@@ -157,92 +153,16 @@ void OpenVRInterface::fill_projection_for_eye(float *p_projection, int p_eye, fl
 	}
 }
 
-CameraMatrix OpenVRInterface::get_projection_for_eye(ARVRInterface::Eyes p_eye, real_t p_aspect, real_t p_z_near, real_t p_z_far) {
+CameraMatrix OpenVRInterface::get_projection_for_eye(XRInterface::Eyes p_eye, real_t p_aspect, real_t p_z_near, real_t p_z_far) {
 	CameraMatrix cm;
 	ERR_FAIL_COND_V(arvr_data == NULL, CameraMatrix());
-
+	
 	fill_projection_for_eye((float *)cm.matrix, (int)p_eye, p_aspect, p_z_near, p_z_far);
 	return cm;
 }
 
-unsigned int OpenVRInterface::get_external_texture_for_eye(ARVRInterface::Eyes p_eye) {
+unsigned int OpenVRInterface::get_external_texture_for_eye(XRInterface::Eyes p_eye) {
 	return 0;
-}
-
-void OpenVRInterface::commit_for_eye(ARVRInterface::Eyes p_eye, RID p_render_target, const Rect2 &p_screen_rect) {
-	// This function is responsible for outputting the final render buffer for
-	// each eye.
-	// p_screen_rect will only have a value when we're outputting to the main
-	// viewport.
-
-	// For an interface that must output to the main viewport (such as with mobile
-	// VR) we should give an error when p_screen_rect is not set
-	// For an interface that outputs to an external device we should render a copy
-	// of one of the eyes to the main viewport if p_screen_rect is set, and only
-	// output to the external device if not.
-
-	Rect2 screen_rect = p_screen_rect;
-
-	if (p_eye == 1 && !screen_rect.has_no_area()) {
-		// blit as mono, attempt to keep our aspect ratio and center our render buffer
-		Vector2 render_size = get_render_targetsize();
-
-		float new_height = screen_rect.size.x * (render_size.y / render_size.x);
-		if (new_height > screen_rect.size.y) {
-			screen_rect.position.y = (0.5f * screen_rect.size.y) - (0.5f * new_height);
-			screen_rect.size.y = new_height;
-		} else {
-			float new_width = screen_rect.size.y * (render_size.x / render_size.y);
-
-			screen_rect.position.x = (0.5f * screen_rect.size.x) - (0.5f * new_width);
-			screen_rect.size.x = new_width;
-		}
-
-		blit(0, &p_render_target, &screen_rect);
-	}
-
-	if (arvr_data->ovr->is_initialised()) {
-		vr::VRTextureBounds_t bounds;
-		bounds.uMin = 0.0;
-		bounds.uMax = 1.0;
-		bounds.vMin = 0.0;
-		bounds.vMax = 1.0;
-
-		uint32_t texid = get_texid(&p_render_target);
-
-		vr::Texture_t eyeTexture = { (void *)(uintptr_t)texid, vr::TextureType_OpenGL, vr::ColorSpace_Auto };
-
-		if (arvr_data->ovr->get_application_type() == openvr_data::OpenVRApplicationType::OVERLAY) {
-			// Overlay mode
-			if (p_eye == 1) {
-				vr::EVROverlayError vrerr;
-
-				// TODO: THIS LOOP CAUSES PROBLEMS.
-				for (int i = 0; i < arvr_data->ovr->get_overlay_count(); i++) {
-					vr::TextureID_t texidov = (vr::TextureID_t)VisualServer::get_singleton()->texture_get_texid(VisualServer::get_singleton()->viewport_get_texture(arvr_data->ovr->get_overlay(i).viewport_rid));
-
-					if (texid == texidov) {
-						vrerr = vr::VROverlay()->SetOverlayTexture(arvr_data->ovr->get_overlay(i).handle, &eyeTexture);
-
-						if (vrerr != vr::VROverlayError_None) {
-							print_line(String("OpenVR could not set texture for overlay: ") + String::num_int64(vrerr) + String(vr::VROverlay()->GetOverlayErrorNameFromEnum(vrerr)));
-						}
-
-						vrerr = vr::VROverlay()->SetOverlayTextureBounds(arvr_data->ovr->get_overlay(i).handle, &bounds);
-
-						if (vrerr != vr::VROverlayError_None) {
-							print_line(String("OpenVR could not set textute bounds for overlay: ") + String::num_int64(vrerr) + String(vr::VROverlay()->GetOverlayErrorNameFromEnum(vrerr)));
-						}
-					}
-				}
-			}
-		} else {
-			vr::EVRCompositorError vrerr = vr::VRCompositor()->Submit(p_eye == 1 ? vr::Eye_Left : vr::Eye_Right, &eyeTexture, &bounds);
-			if (vrerr != vr::VRCompositorError_None) {
-				printf("OpenVR reports: %i\n", vrerr);
-			}
-		}
-	}
 }
 
 void OpenVRInterface::process() {
@@ -302,23 +222,23 @@ bool OpenVRInterface::play_area_available() const {
 	return arvr_data->ovr->play_area_available();
 }
 
-PoolVector3Array OpenVRInterface::get_play_area() const {
-	ARVRServer *server = ARVRServer::get_singleton();
+PackedVector3Array OpenVRInterface::get_play_area() const {
+	XRServer *server = XRServer::get_singleton();
 
 	if (server == NULL) {
-		print_error("Failed to get ARVRServer");
-		return PoolVector3Array();
+		print_error("Failed to get XRServer");
+		return PackedVector3Array();
 	}
 
 	const Vector3 *play_area = arvr_data->ovr->get_play_area();
 	Transform reference = server->get_reference_frame();
 	float ws = server->get_world_scale();
 
-	PoolVector3Array arr;
+	PackedVector3Array arr;
 	arr.resize(4);
 
 	{
-		PoolVector3Array::Write w = arr.write();
+		Vector3 *w = arr.ptrw();
 
 		for (int i = 0; i < 4; i++) {
 			w[i] = reference.xform_inv(play_area[i]) * ws;

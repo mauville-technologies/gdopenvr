@@ -5,7 +5,6 @@ openvr_dir = "lib/openvr/"
 
 # First, create a custom env for the shared library.
 module_env = env.Clone()
-from compat import isbasestring
 
 # Add library includes
 module_env.Append(CPPPATH=[
