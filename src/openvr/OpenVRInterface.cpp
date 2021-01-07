@@ -165,55 +165,6 @@ unsigned int OpenVRInterface::get_external_texture_for_eye(XRInterface::Eyes p_e
 	return 0;
 }
 
-void OpenVRInterface::commit_for_eye(XRInterface::Eyes p_eye, RID p_render_target, const Rect2 &p_screen_rect) {
-	// This function is responsible for outputting the final render buffer for
-	// each eye.
-	// p_screen_rect will only have a value when we're outputting to the main
-	// viewport.
-
-	// For an interface that must output to the main viewport (such as with mobile
-	// VR) we should give an error when p_screen_rect is not set
-	// For an interface that outputs to an external device we should render a copy
-	// of one of the eyes to the main viewport if p_screen_rect is set, and only
-	// output to the external device if not.
-
-	Rect2 screen_rect = p_screen_rect;
-	
-	if (p_eye == 1 && !screen_rect.has_no_area()) {
-		// blit as mono, attempt to keep our aspect ratio and center our render buffer
-		Vector2 render_size = get_render_targetsize();
-
-		float new_height = screen_rect.size.x * (render_size.y / render_size.x);
-		if (new_height > screen_rect.size.y) {
-			screen_rect.position.y = (0.5f * screen_rect.size.y) - (0.5f * new_height);
-			screen_rect.size.y = new_height;
-		} else {
-			float new_width = screen_rect.size.y * (render_size.x / render_size.y);
-
-			screen_rect.position.x = (0.5f * screen_rect.size.x) - (0.5f * new_width);
-			screen_rect.size.x = new_width;
-		}
-
-		blit(0, &p_render_target, &screen_rect);
-	}
-	
-	XRInterface::Eyes eye = (XRInterface::Eyes)p_eye;
-
-	if (eye == XRInterface::EYE_LEFT) {
-		screen_rect.size.x /= 2.0;
-	} else if (p_eye == XRInterface::EYE_RIGHT) {
-		screen_rect.size.x /= 2.0;
-		screen_rect.position.x += screen_rect.size.x;
-	}	
-	RendererCompositor::BlitToScreen blit;
-	blit.render_target = p_render_target;
-	blit.rect = Rect2i(screen_rect);
-	blit.eye = p_eye;
-	blit.vr = true;
-	RSG::rasterizer->prepare_for_blitting_render_targets();
-	RSG::rasterizer->blit_render_targets_to_screen(0, &blit, 1);
-}
-
 void OpenVRInterface::process() {
 	// this method gets called before every frame is rendered, here is where you
 	// should update tracking data, update controllers, etc.

@@ -65,7 +65,6 @@ public:
 	void fill_projection_for_eye(float *p_projection, int p_eye, float p_aspect, float p_z_near, float p_z_far);
 	CameraMatrix get_projection_for_eye(XRInterface::Eyes p_eye, real_t p_aspect, real_t p_z_near, real_t p_z_far) override; /* get each eyes projection matrix */
 	unsigned int get_external_texture_for_eye(XRInterface::Eyes p_eye) override; /* if applicable return external texture to render to */
-	void commit_for_eye(XRInterface::Eyes p_eye, RID p_render_target, const Rect2 &p_screen_rect) override; /* output the left or right eye */
 
 	void process() override;
 	void notification(int p_what) override;
