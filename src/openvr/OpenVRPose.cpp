@@ -24,7 +24,7 @@ void OpenVRPose::_process(float delta) {
 
 		if (is_active) {
 			// printf("Pose is active\n");
-			Ref<OpenVRInterface> ovr_interface = static_cast<Ref<OpenVRInterface> >(ARVRServer::get_singleton()->find_interface("OpenVR"));
+			Ref<OpenVRInterface> ovr_interface = static_cast<Ref<OpenVRInterface>>(XRServer::get_singleton()->find_interface("OpenVR"));
 			float world_scale = ovr_interface->get_worldscale();
 			Transform transform;
 			ovr->transform_from_matrix(&transform, &pose_data.pose.mDeviceToAbsoluteTracking, world_scale);
@@ -37,7 +37,7 @@ void OpenVRPose::_process(float delta) {
 
 OpenVRPose::OpenVRPose() {
 	ovr = openvr_data::retain_singleton();
-	server = ARVRServer::get_singleton();
+	server = XRServer::get_singleton();
 	action_idx = -1;
 	is_active = false;
 	on_hand = 0;

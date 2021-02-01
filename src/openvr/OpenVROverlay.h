@@ -4,8 +4,8 @@
 #include <scene/main/viewport.h>
 #include "openvr_data.h"
 
-class OpenVROverlay : public Viewport {
-	GDCLASS(OpenVROverlay, Viewport)
+class OpenVROverlay : public SubViewport {
+	GDCLASS(OpenVROverlay, SubViewport)
 
 private:
 	openvr_data *ovr;

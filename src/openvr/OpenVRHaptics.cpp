@@ -1,4 +1,13 @@
 #include "OpenVRHaptics.h"
+#include <core/version.h>
+
+#if(VERSION_MAJOR) >= 4
+	#define TEXTURE_CLASS Texture2D
+	#define REAL_VARIANT Variant::FLOAT
+#else
+	#define TEXTURE_CLASS Texture
+	#define REAL_VARIANT Variant::REAL
+#endif
 
 void OpenVRHaptics::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_action"), &OpenVRHaptics::get_action);
@@ -11,15 +20,15 @@ void OpenVRHaptics::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_duration"), &OpenVRHaptics::get_duration);
 	ClassDB::bind_method(D_METHOD("set_duration"), &OpenVRHaptics::set_duration);
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "duration", PROPERTY_HINT_NONE), "set_duration", "get_duration");
+	ADD_PROPERTY(PropertyInfo(REAL_VARIANT, "duration", PROPERTY_HINT_NONE), "set_duration", "get_duration");
 
 	ClassDB::bind_method(D_METHOD("get_frequency"), &OpenVRHaptics::get_frequency);
 	ClassDB::bind_method(D_METHOD("set_frequency"), &OpenVRHaptics::set_frequency);
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "frequency", PROPERTY_HINT_NONE), "set_frequency", "get_frequency");
+	ADD_PROPERTY(PropertyInfo(REAL_VARIANT, "frequency", PROPERTY_HINT_NONE), "set_frequency", "get_frequency");
 
 	ClassDB::bind_method(D_METHOD("get_amplitude"), &OpenVRHaptics::get_amplitude);
 	ClassDB::bind_method(D_METHOD("set_amplitude"), &OpenVRHaptics::set_amplitude);
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "amplitude", PROPERTY_HINT_NONE), "set_amplitude", "get_amplitude");
+	ADD_PROPERTY(PropertyInfo(REAL_VARIANT, "amplitude", PROPERTY_HINT_NONE), "set_amplitude", "get_amplitude");
 
 	ClassDB::bind_method(D_METHOD("trigger_pulse"), &OpenVRHaptics::trigger_pulse);
 

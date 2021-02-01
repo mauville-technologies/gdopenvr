@@ -2,12 +2,12 @@
 #define OPENVR_CONTROLLER_H
 
 #include "openvr_data.h"
-#include <scene/3d/arvr_nodes.h>
+#include <scene/3d/xr_nodes.h>
 
 #include <vector>
 
-class OpenVRController : public ARVRController {
-	GDCLASS(OpenVRController, ARVRController)
+class OpenVRController : public XRController3D {
+	GDCLASS(OpenVRController, XRController3D)
 
 private:
 	openvr_data *ovr;
@@ -29,8 +29,8 @@ public:
 	OpenVRController();
 	~OpenVRController();
 
-	PoolStringArray get_button_actions();
-	void set_button_actions(PoolStringArray p_actions);
+	PackedStringArray get_button_actions();
+	void set_button_actions(PackedStringArray p_actions);
 
 	Vector2 get_analog(String p_action);
 	void trigger_haptic(String p_action, float p_duration, float p_frequency, float p_amplitude);

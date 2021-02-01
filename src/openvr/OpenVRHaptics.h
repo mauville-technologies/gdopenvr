@@ -2,10 +2,10 @@
 #define OPENVR_HAPTICS_H
 
 #include "openvr_data.h"
-#include <scene/3d/spatial.h>
+#include <scene/3d/node_3d.h>
 
-class OpenVRHaptics : public Spatial {
-	GDCLASS(OpenVRHaptics, Spatial)
+class OpenVRHaptics : public Node3D {
+	GDCLASS(OpenVRHaptics, Node3D)
 
 private:
 	openvr_data *ovr;

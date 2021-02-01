@@ -2,15 +2,15 @@
 #define OPENVR_POSE_H
 
 #include "openvr_data.h"
-#include <servers/arvr_server.h>
-#include <scene/3d/spatial.h>
+#include <servers/xr_server.h>
+#include <scene/3d/node_3d.h>
 
-class OpenVRPose : public Spatial {
-	GDCLASS(OpenVRPose, Spatial)
+class OpenVRPose : public Node3D {
+	GDCLASS(OpenVRPose, Node3D)
 
 private:
 	openvr_data *ovr;
-	ARVRServer *server;
+	XRServer *server;
 
 	String action;
 	int action_idx;
